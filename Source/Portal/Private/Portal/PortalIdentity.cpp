@@ -78,7 +78,7 @@ void UPortalIdentity::RequestWalletSessionKey(const FPortalIdentityResponseDeleg
 	CallJS(PortalIdentityAction::REQUEST_WALLET_SESSION_KEY, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnRequestWalletSessionKeyResponse));
 }
 
-void UPortalIdentity::ExecuteTransaction(const FPortalExecuteTransactionRequest& RequestData, const FPortalIdentityResponseDelegate &ResponseDelegate)
+void UPortalIdentity::ExecuteTransaction(const FPortalExecuteTransactionRequest &RequestData, const FPortalIdentityResponseDelegate &ResponseDelegate)
 {
 	PORTAL_LOG("ExecuteTransaction Request: %s", *UStructToJsonString(RequestData))
 
@@ -100,7 +100,7 @@ void UPortalIdentity::HasStoredCredentials(const FPortalIdentityResponseDelegate
 	// we do check credentials into two steps, we check accessToken and then IdToken
 	// check access token
 	CallJS(PortalIdentityAction::GET_ACCESS_TOKEN, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateLambda([=](FPortalJSResponse Response)
-																													 {
+																													   {
 		FString AccessToken;
 
 		Response.JsonObject->TryGetStringField(TEXT("result"), AccessToken);
@@ -457,7 +457,7 @@ void UPortalIdentity::OnExecuteTransactionResponse(FPortalJSResponse Response)
 	{
 		FString Msg;
 		bool bSuccess = true;
-		
+
 		if (!Response.success)
 		{
 			PORTAL_WARN("EVM transaction receipt retrieval failed.");
@@ -471,7 +471,7 @@ void UPortalIdentity::OnExecuteTransactionResponse(FPortalJSResponse Response)
 void UPortalIdentity::OnRequestWalletSessionKeyResponse(FPortalJSResponse Response)
 {
 	auto ResponseDelegate = GetResponseDelegate(Response);
-	
+
 	if (!ResponseDelegate)
 	{
 		return;
@@ -482,7 +482,7 @@ void UPortalIdentity::OnRequestWalletSessionKeyResponse(FPortalJSResponse Respon
 		const FString Message = Response.Error.IsSet() ? Response.Error->ToString() : Response.JsonObject->GetStringField(TEXT("error"));
 
 		PORTAL_ERR("%s", *Message);
-		ResponseDelegate->ExecuteIfBound(FPortalIdentityResult{ Response.success, Message, Response });
+		ResponseDelegate->ExecuteIfBound(FPortalIdentityResult{Response.success, Message, Response});
 
 		return;
 	}
@@ -572,7 +572,7 @@ void UPortalIdentity::OnDeepLinkActivated(FString DeepLink)
 																						   {
 				PKCELogoutResponseDelegate.ExecuteIfBound(FPortalIdentityResult{true, "Logged out"});
 				PKCELogoutResponseDelegate = nullptr;
-				ResetStateFlags(IPS_CONNECTED | IPS_PKCE | IPS_IMX);
+				ResetStateFlags(IPS_CONNECTED | IPS_PKCE);
 				SaveIdentitySettings(); }, TStatId(), nullptr, ENamedThreads::GameThread);
 		}
 	}

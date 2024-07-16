@@ -64,7 +64,7 @@ public:
 
 	void Logout(bool DoHardLogout, const FPortalIdentityResponseDelegate &ResponseDelegate);
 	void RequestWalletSessionKey(const FPortalIdentityResponseDelegate &ResponseDelegate);
-	void ExecuteTransaction(const FPortalExecuteTransactionRequest& RequestData, const FPortalIdentityResponseDelegate &ResponseDelegate);
+	void ExecuteTransaction(const FPortalExecuteTransactionRequest &RequestData, const FPortalIdentityResponseDelegate &ResponseDelegate);
 	void GetIdToken(const FPortalIdentityResponseDelegate &ResponseDelegate);
 	void GetAccessToken(const FPortalIdentityResponseDelegate &ResponseDelegate);
 	/**
@@ -150,7 +150,6 @@ private:
 		IPS_NONE = 0,
 		IPS_CONNECTING = 1 << 0,
 		IPS_CONNECTED = 1 << 1,
-		IPS_IMX = 1 << 2, // if set player used "connect" instead of "login"
 		IPS_PKCE = 1 << 3,
 		IPS_COMPLETING_PKCE = 1 << 4,
 		IPS_INITIALIZED = 1 << 5,
