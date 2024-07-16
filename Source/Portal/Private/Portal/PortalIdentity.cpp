@@ -44,16 +44,6 @@ void UPortalIdentity::Initialize(const FPortalIdentityInitData &Data, const FPor
 	CallJS(PortalIdentityAction::INIT, InitData.ToJsonString(), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnInitializeResponse), false);
 }
 
-#if PLATFORM_ANDROID | PLATFORM_IOS | PLATFORM_MAC
-void UPortalIdentity::ConnectPKCE(const FPortalIdentityResponseDelegate &ResponseDelegate)
-{
-	SetStateFlags(IPS_CONNECTING | IPS_PKCE);
-
-	PKCEResponseDelegate = ResponseDelegate;
-	CallJS(PortalIdentityAction::GetPKCEAuthUrl, TEXT(""), PKCEResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnGetPKCEAuthUrlResponse));
-}
-#endif
-
 void UPortalIdentity::Logout(bool DoHardLogout, const FPortalIdentityResponseDelegate &ResponseDelegate)
 {
 #if PLATFORM_ANDROID | PLATFORM_IOS | PLATFORM_MAC
@@ -68,7 +58,7 @@ void UPortalIdentity::Logout(bool DoHardLogout, const FPortalIdentityResponseDel
 		{
 			SetStateFlags(IPS_HARDLOGOUT);
 		}
-		CallJS(PortalIdentityAction::Logout, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnLogoutResponse));
+		CallJS(PortalIdentityAction::LOGOUT, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnLogoutResponse));
 	}
 	else
 	{
@@ -79,37 +69,38 @@ void UPortalIdentity::Logout(bool DoHardLogout, const FPortalIdentityResponseDel
 void UPortalIdentity::ConfirmCode(const FString &DeviceCode, const float Interval, const FPortalIdentityResponseDelegate &ResponseDelegate)
 {
 	FPortalIdentityCodeConfirmRequestData Data{DeviceCode, Interval};
-	FString Action = PortalIdentityAction::LOGIN_CONFIRM_CODE;
 
-	CallJS(Action, UStructToJsonString(Data), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnConfirmCodeResponse));
+	CallJS(PortalIdentityAction::AUTHENTICATE_CONFIRM_CODE, UStructToJsonString(Data), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnConfirmCodeResponse));
+}
+
+void UPortalIdentity::RequestWalletSessionKey(const FPortalIdentityResponseDelegate &ResponseDelegate)
+{
+	CallJS(PortalIdentityAction::REQUEST_WALLET_SESSION_KEY, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnRequestWalletSessionKeyResponse));
+}
+
+void UPortalIdentity::ExecuteTransaction(const FPortalExecuteTransactionRequest &RequestData, const FPortalIdentityResponseDelegate &ResponseDelegate)
+{
+	PORTAL_LOG("ExecuteTransaction Request: %s", *UStructToJsonString(RequestData))
+
+	CallJS(PortalIdentityAction::EXECUTE_TRANSACTION, UStructToJsonString(RequestData), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnExecuteTransactionResponse));
 }
 
 void UPortalIdentity::GetIdToken(const FPortalIdentityResponseDelegate &ResponseDelegate)
 {
-	CallJS(PortalIdentityAction::GetIdToken, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnGetIdTokenResponse));
+	CallJS(PortalIdentityAction::GET_ID_TOKEN, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnGetIdTokenResponse));
 }
 
 void UPortalIdentity::GetAccessToken(const FPortalIdentityResponseDelegate &ResponseDelegate)
 {
-	CallJS(PortalIdentityAction::GetAccessToken, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnGetAccessTokenResponse));
-}
-
-void UPortalIdentity::GetAddress(const FPortalIdentityResponseDelegate &ResponseDelegate)
-{
-	CallJS(PortalIdentityAction::GetAddress, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnGetAddressResponse));
-}
-
-void UPortalIdentity::GetEmail(const FPortalIdentityResponseDelegate &ResponseDelegate)
-{
-	CallJS(PortalIdentityAction::GetEmail, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnGetEmailResponse));
+	CallJS(PortalIdentityAction::GET_ACCESS_TOKEN, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnGetAccessTokenResponse));
 }
 
 void UPortalIdentity::HasStoredCredentials(const FPortalIdentityResponseDelegate &ResponseDelegate)
 {
 	// we do check credentials into two steps, we check accessToken and then IdToken
 	// check access token
-	CallJS(PortalIdentityAction::GetAccessToken, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateLambda([=](FPortalJSResponse Response)
-																													 {
+	CallJS(PortalIdentityAction::GET_ACCESS_TOKEN, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateLambda([=](FPortalJSResponse Response)
+																													   {
 		FString AccessToken;
 
 		Response.JsonObject->TryGetStringField(TEXT("result"), AccessToken);
@@ -120,7 +111,7 @@ void UPortalIdentity::HasStoredCredentials(const FPortalIdentityResponseDelegate
 		else
 		{
 			// check for id token
-			CallJS(PortalIdentityAction::GetIdToken, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateLambda([ResponseDelegate](FPortalJSResponse Response)
+			CallJS(PortalIdentityAction::GET_ID_TOKEN, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateLambda([ResponseDelegate](FPortalJSResponse Response)
 			{
 				FString IdToken;
 
@@ -156,9 +147,7 @@ void UPortalIdentity::ReinstateConnection(FPortalJSResponse Response)
 
 	if (auto ResponseDelegate = GetResponseDelegate(Response))
 	{
-		// currently, this response has to be called only for RELOGIN AND RECONNECT bridge routines
-		bool IsRelogin = Response.responseFor.Compare(PortalIdentityAction::RELOGIN, ESearchCase::IgnoreCase) == 0;
-		const FString CallbackName = IsRelogin ? "Relogin" : "Reconnect";
+		const FString CallbackName = "Reauthenticate";
 
 		if (Response.JsonObject->GetBoolField(TEXT("result")))
 		{
@@ -171,7 +160,7 @@ void UPortalIdentity::ReinstateConnection(FPortalJSResponse Response)
 			if (IsStateFlagsSet(IPS_PKCE))
 			{
 				PKCEResponseDelegate = ResponseDelegate.GetValue();
-				CallJS(PortalIdentityAction::GetPKCEAuthUrl, TEXT(""), PKCEResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnGetPKCEAuthUrlResponse));
+				CallJS(PortalIdentityAction::GET_PKCE_AUTH_URL, TEXT(""), PKCEResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnGetPKCEAuthUrlResponse));
 			}
 			else
 #endif
@@ -247,7 +236,7 @@ void UPortalIdentity::OnInitDeviceFlowResponse(FPortalJSResponse Response)
 		{
 			FString Msg;
 
-			PORTAL_WARN("Login device flow initialization attempt failed.");
+			PORTAL_WARN("Authenticate device flow initialization attempt failed.");
 			Response.Error.IsSet() ? Msg = Response.Error->ToString() : Msg = Response.JsonObject->GetStringField(TEXT("error"));
 			ResponseDelegate->ExecuteIfBound(FPortalIdentityResult{false, Msg, Response});
 
@@ -365,7 +354,7 @@ void UPortalIdentity::OnGetPKCEAuthUrlResponse(FPortalJSResponse Response)
 
 			Msg = Response.JsonObject->GetStringField(TEXT("result")).Replace(TEXT(" "), TEXT("+"));
 #if PLATFORM_ANDROID
-			OnPKCEDismissed = FPortalIdentityOnPKCEDismissedDelegate::CreateUObject(this, &UPortalIdentity::HandleOnLoginPKCEDismissed);
+			OnPKCEDismissed = FPortalIdentityOnPKCEDismissedDelegate::CreateUObject(this, &UPortalIdentity::HandleOnAuthenticatePKCEDismissed);
 			LaunchAndroidUrl(Msg);
 #elif PLATFORM_IOS
 			[[PortalIOS instance] launchUrl:TCHAR_TO_ANSI(*Msg)];
@@ -462,24 +451,40 @@ void UPortalIdentity::OnGetAccessTokenResponse(FPortalJSResponse Response)
 	}
 }
 
-void UPortalIdentity::OnGetAddressResponse(FPortalJSResponse Response)
+void UPortalIdentity::OnExecuteTransactionResponse(FPortalJSResponse Response)
 {
 	if (auto ResponseDelegate = GetResponseDelegate(Response))
 	{
 		FString Msg;
 		bool bSuccess = true;
 
-		if (!Response.success || !Response.JsonObject->HasTypedField<EJson::String>(TEXT("result")))
+		if (!Response.success)
 		{
-			PORTAL_WARN("Could not fetch address from Identity.");
+			PORTAL_WARN("EVM transaction receipt retrieval failed.");
 			Response.Error.IsSet() ? Msg = Response.Error->ToString() : Msg = Response.JsonObject->GetStringField(TEXT("error"));
 			bSuccess = false;
 		}
-		else
-		{
-			Msg = Response.JsonObject->GetStringField(TEXT("result"));
-		}
 		ResponseDelegate->ExecuteIfBound(FPortalIdentityResult{bSuccess, Msg, Response});
+	}
+}
+
+void UPortalIdentity::OnRequestWalletSessionKeyResponse(FPortalJSResponse Response)
+{
+	auto ResponseDelegate = GetResponseDelegate(Response);
+
+	if (!ResponseDelegate)
+	{
+		return;
+	}
+
+	if (!Response.success)
+	{
+		const FString Message = Response.Error.IsSet() ? Response.Error->ToString() : Response.JsonObject->GetStringField(TEXT("error"));
+
+		PORTAL_ERR("%s", *Message);
+		ResponseDelegate->ExecuteIfBound(FPortalIdentityResult{Response.success, Message, Response});
+
+		return;
 	}
 }
 
@@ -488,7 +493,7 @@ void UPortalIdentity::OnConfirmCodeResponse(FPortalJSResponse Response)
 	if (auto ResponseDelegate = GetResponseDelegate(Response))
 	{
 		FString Msg;
-		FString TypeOfConnection = TEXT("login");
+		FString TypeOfConnection = TEXT("authenticate");
 
 		ResetStateFlags(IPS_CONNECTING);
 		if (Response.success)
@@ -502,27 +507,6 @@ void UPortalIdentity::OnConfirmCodeResponse(FPortalJSResponse Response)
 			Response.Error.IsSet() ? Msg = Response.Error->ToString() : Msg = Response.JsonObject->GetStringField(TEXT("error"));
 		}
 		ResponseDelegate->ExecuteIfBound(FPortalIdentityResult{Response.success, Msg, Response});
-	}
-}
-
-void UPortalIdentity::OnGetEmailResponse(FPortalJSResponse Response)
-{
-	if (auto ResponseDelegate = GetResponseDelegate(Response))
-	{
-		FString Msg;
-		bool bSuccess = true;
-
-		if (!Response.success || !Response.JsonObject->HasTypedField<EJson::String>(TEXT("result")))
-		{
-			PORTAL_WARN("Connect attempt failed.");
-			Response.Error.IsSet() ? Msg = Response.Error->ToString() : Msg = Response.JsonObject->GetStringField(TEXT("error"));
-			bSuccess = false;
-		}
-		else
-		{
-			Msg = Response.JsonObject->GetStringField(TEXT("result"));
-		}
-		ResponseDelegate->ExecuteIfBound(FPortalIdentityResult{bSuccess, Msg, Response});
 	}
 }
 
@@ -588,20 +572,20 @@ void UPortalIdentity::OnDeepLinkActivated(FString DeepLink)
 																						   {
 				PKCELogoutResponseDelegate.ExecuteIfBound(FPortalIdentityResult{true, "Logged out"});
 				PKCELogoutResponseDelegate = nullptr;
-				ResetStateFlags(IPS_PKCE);
+				ResetStateFlags(IPS_CONNECTED | IPS_PKCE);
 				SaveIdentitySettings(); }, TStatId(), nullptr, ENamedThreads::GameThread);
 		}
 	}
 	else if (DeepLink.StartsWith(InitData.redirectUri))
 	{
-		CompleteLoginPKCEFlow(DeepLink);
+		CompleteAuthenticatePKCEFlow(DeepLink);
 	}
 }
 
-void UPortalIdentity::CompleteLoginPKCEFlow(FString Url)
+void UPortalIdentity::CompleteAuthenticatePKCEFlow(FString Url)
 {
 	// Required mainly for Android to detect when Chrome Custom tabs is dismissed
-	// See HandleOnLoginPKCEDismissed
+	// See HandleOnAuthenticatePKCEDismissed
 	SetStateFlags(IPS_COMPLETING_PKCE);
 
 	// Get code and state from deeplink URL
@@ -641,7 +625,7 @@ void UPortalIdentity::CompleteLoginPKCEFlow(FString Url)
 	{
 		FPortalIdentityConnectPKCEData Data = FPortalIdentityConnectPKCEData{Code.GetValue(), State.GetValue()};
 
-		CallJS(PortalIdentityAction::LOGIN_PKCE, UStructToJsonString(Data), PKCEResponseDelegate,
+		CallJS(PortalIdentityAction::AUTHENTICATE_PKCE, UStructToJsonString(Data), PKCEResponseDelegate,
 			   FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnConnectPKCEResponse));
 	}
 }
@@ -669,12 +653,12 @@ void UPortalIdentity::HandleDeepLink(NSString *sDeepLink) const
 #endif
 
 #if PLATFORM_ANDROID
-void UPortalIdentity::HandleOnLoginPKCEDismissed()
+void UPortalIdentity::HandleOnAuthenticatePKCEDismissed()
 {
-	PORTAL_LOG("Handle On Login PKCE Dismissed");
+	PORTAL_LOG("Handle On Authenticate PKCE Dismissed");
 	OnPKCEDismissed = nullptr;
 
-	// If the second part of PKCE (CompleteLoginPKCEFlow) has not started yet and custom tabs is dismissed,
+	// If the second part of PKCE (CompleteAuthenticatePKCEFlow) has not started yet and custom tabs is dismissed,
 	// this means the user manually dismissed the custom tabs before entering all
 	// all required details (e.g. email address) into Identity
 	// Cannot use IPS_CONNECTING as that is set when PKCE flow is initiated. Here we are checking against the second
@@ -683,14 +667,14 @@ void UPortalIdentity::HandleOnLoginPKCEDismissed()
 	{
 		// User hasn't entered all required details (e.g. email address) into
 		// Identity yet
-		PORTAL_LOG("Login PKCE dismissed before completing the flow");
+		PORTAL_LOG("Authenticate PKCE dismissed before completing the flow");
 		if (FTaskGraphInterface::IsRunning())
 		{
 			FGraphEventRef GameThreadTask = FFunctionGraphTask::CreateAndDispatchWhenReady([this]()
 																						   {
 					if (!PKCEResponseDelegate.ExecuteIfBound(FPortalIdentityResult{ false, "Cancelled" }))
 					{
-						PORTAL_WARN("Login PKCEResponseDelegate delegate was not called");
+						PORTAL_WARN("Authenticate PKCEResponseDelegate delegate was not called");
 					}
 					PKCEResponseDelegate = nullptr; }, TStatId(), nullptr, ENamedThreads::GameThread);
 		}

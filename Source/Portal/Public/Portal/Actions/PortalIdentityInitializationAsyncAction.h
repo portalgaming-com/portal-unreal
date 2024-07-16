@@ -20,7 +20,7 @@ class PORTAL_API UPortalIdentityInitializationAsyncAction : public UPortalBluepr
 
 public:
 	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject", BlueprintInternalUseOnly = "true"), Category = "Portal")
-	static UPortalIdentityInitializationAsyncAction *InitializeIdentity(UObject *WorldContextObject, const FString &ClientID, const FString &RedirectUri, const FString &LogoutUri, const FString &Environment);
+	static UPortalIdentityInitializationAsyncAction *InitializeIdentity(UObject *WorldContextObject, const FString &ClientID, const FString &RedirectUri, const FString &LogoutUri);
 
 	virtual void Activate() override;
 
@@ -28,7 +28,6 @@ private:
 	FString ClientId;
 	FString RedirectUri;
 	FString LogoutUri;
-	FString Environment;
 
 	UPROPERTY(BlueprintAssignable)
 	FIdentityInitializationOutputPin Initialized;

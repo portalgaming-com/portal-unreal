@@ -112,16 +112,16 @@ public class CustomTabsController extends CustomTabsServiceConnection {
         } else {
             // Running in a different thread to prevent doing too much work on main thread
             new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        launchCustomTabs(context, uri);
-                    } catch (ActivityNotFoundException ex) {
-                        // Failed to launch Custom Tab browser, so launch in browser
-                        context.startActivity(new Intent(Intent.ACTION_VIEW, uri));
-                    }
-                }
-            }).start();
+               @Override
+               public void run() {
+                   try {
+                       launchCustomTabs(context, uri);
+                   } catch (ActivityNotFoundException ex) {
+                       // Failed to launch Custom Tab browser, so launch in browser
+                       context.startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                   }
+               }
+           }).start();
         }
     }
 
