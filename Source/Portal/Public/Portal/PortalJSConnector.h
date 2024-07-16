@@ -27,7 +27,6 @@ class PORTAL_API UPortalJSConnector : public UObject
 	GENERATED_BODY()
 
 	friend class UPortalIdentity;
-	friend class UPortalAnalytics;
 
 public:
 	DECLARE_MULTICAST_DELEGATE(FOnBridgeReadyDelegate);

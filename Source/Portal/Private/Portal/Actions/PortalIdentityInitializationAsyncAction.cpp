@@ -5,14 +5,13 @@
 #include "Portal/PortalIdentity.h"
 #include "Portal/PortalSubsystem.h"
 
-UPortalIdentityInitializationAsyncAction *UPortalIdentityInitializationAsyncAction::InitializeIdentity(UObject *WorldContextObject, const FString &ClientID, const FString &RedirectUri, const FString &LogoutUri, const FString &Environment)
+UPortalIdentityInitializationAsyncAction *UPortalIdentityInitializationAsyncAction::InitializeIdentity(UObject *WorldContextObject, const FString &ClientID, const FString &RedirectUri, const FString &LogoutUri)
 {
 	UPortalIdentityInitializationAsyncAction *IdentityInitBlueprintNode = NewObject<UPortalIdentityInitializationAsyncAction>();
 
 	IdentityInitBlueprintNode->ClientId = ClientID;
 	IdentityInitBlueprintNode->RedirectUri = RedirectUri;
 	IdentityInitBlueprintNode->LogoutUri = LogoutUri;
-	IdentityInitBlueprintNode->Environment = Environment;
 	IdentityInitBlueprintNode->WorldContextObject = WorldContextObject;
 
 	return IdentityInitBlueprintNode;
@@ -34,7 +33,7 @@ void UPortalIdentityInitializationAsyncAction::DoInit(TWeakObjectPtr<UPortalJSCo
 	// Get Identity
 	auto Identity = GetSubsystem()->GetIdentity();
 	// Run Initialize
-	Identity->Initialize(FPortalIdentityInitData{ClientId, RedirectUri, LogoutUri, Environment}, UPortalIdentity::FPortalIdentityResponseDelegate::CreateUObject(this, &UPortalIdentityInitializationAsyncAction::OnInitialized));
+	Identity->Initialize(FPortalIdentityInitData{ClientId, RedirectUri, LogoutUri}, UPortalIdentity::FPortalIdentityResponseDelegate::CreateUObject(this, &UPortalIdentityInitializationAsyncAction::OnInitialized));
 }
 
 void UPortalIdentityInitializationAsyncAction::OnInitialized(FPortalIdentityResult Result)

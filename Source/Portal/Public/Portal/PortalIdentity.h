@@ -63,12 +63,10 @@ public:
 	void Initialize(const FPortalIdentityInitData &InitData, const FPortalIdentityResponseDelegate &ResponseDelegate);
 
 	void Logout(bool DoHardLogout, const FPortalIdentityResponseDelegate &ResponseDelegate);
-
+	void RequestWalletSessionKey(const FPortalIdentityResponseDelegate &ResponseDelegate);
+	void ExecuteTransaction(const FPortalExecuteTransactionRequest& RequestData, const FPortalIdentityResponseDelegate &ResponseDelegate);
 	void GetIdToken(const FPortalIdentityResponseDelegate &ResponseDelegate);
 	void GetAccessToken(const FPortalIdentityResponseDelegate &ResponseDelegate);
-	void GetAddress(const FPortalIdentityResponseDelegate &ResponseDelegate);
-	void GetEmail(const FPortalIdentityResponseDelegate &ResponseDelegate);
-
 	/**
 	 * Checks if the user's credentials have been stored
 	 * @param ResponseDelegate The response delegate of type
@@ -121,19 +119,19 @@ protected:
 	void OnConnectPKCEResponse(FPortalJSResponse Response);
 #endif
 	void OnGetIdTokenResponse(FPortalJSResponse Response);
+	void OnRequestWalletSessionKeyResponse(FPortalJSResponse Response);
+	void OnExecuteTransactionResponse(FPortalJSResponse Response);
 	void OnGetAccessTokenResponse(FPortalJSResponse Response);
-	void OnGetAddressResponse(FPortalJSResponse Response);
-	void OnGetEmailResponse(FPortalJSResponse Response);
 
 	void LogAndIgnoreResponse(FPortalJSResponse Response);
 
 #if PLATFORM_ANDROID | PLATFORM_IOS | PLATFORM_MAC
 	void OnDeepLinkActivated(FString DeepLink);
-	void CompleteLoginPKCEFlow(FString Url);
+	void CompleteAuthenticatePKCEFlow(FString Url);
 #endif
 
 #if PLATFORM_ANDROID
-	void HandleOnLoginPKCEDismissed();
+	void HandleOnAuthenticatePKCEDismissed();
 	void CallJniStaticVoidMethod(JNIEnv *Env, const jclass Class, jmethodID Method, ...);
 	void LaunchAndroidUrl(FString Url);
 #endif
@@ -150,6 +148,9 @@ private:
 	enum EPortalIdentityStateFlags : uint8
 	{
 		IPS_NONE = 0,
+		IPS_CONNECTING = 1 << 0,
+		IPS_CONNECTED = 1 << 1,
+		IPS_IMX = 1 << 2, // if set player used "connect" instead of "login"
 		IPS_PKCE = 1 << 3,
 		IPS_COMPLETING_PKCE = 1 << 4,
 		IPS_INITIALIZED = 1 << 5,

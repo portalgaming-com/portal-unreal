@@ -4,22 +4,17 @@ namespace PortalIdentityAction
 {
 	const FString INIT = TEXT("init");
 	const FString INIT_DEVICE_FLOW = TEXT("initDeviceFlow");
-	const FString RELOGIN = TEXT("relogin");
-	const FString LOGIN_CONFIRM_CODE = TEXT("loginConfirmCode");
-	const FString CONNECT_CONFIRM_CODE = TEXT("connectConfirmCode");
-	const FString RECONNECT = TEXT("reconnect");
-	const FString Logout = TEXT("logout");
-	const FString Connect = TEXT("connect");
+	const FString REAUTHENTICATE = TEXT("reauthenticate");
+	const FString AUTHENTICATE_CONFIRM_CODE = TEXT("authenticateConfirmCode");
+	const FString LOGOUT = TEXT("logout");
 
 #if PLATFORM_ANDROID | PLATFORM_IOS | PLATFORM_MAC
-	const FString GetPKCEAuthUrl = TEXT("getPKCEAuthUrl");
-	const FString LOGIN_PKCE = TEXT("loginPKCE");
-	; //+
-	const FString CONNECT_PKCE = TEXT("connectPKCE");
+	const FString GET_PKCE_AUTH_URL = TEXT("getPKCEAuthUrl");
+	const FString AUTHENTICATE_PKCE = TEXT("authenticatePKCE");
 #endif
 
-	const FString GetAddress = TEXT("getAddress");
-	const FString GetEmail = TEXT("getEmail");
-	const FString GetAccessToken = TEXT("getAccessToken");
-	const FString GetIdToken = TEXT("getIdToken");
+	const FString GET_ACCESS_TOKEN = TEXT("getAccessToken");
+	const FString GET_ID_TOKEN = TEXT("getIdToken");
+	const FString REQUEST_WALLET_SESSION_KEY = TEXT("requestWalletSessionKey");
+	const FString EXECUTE_TRANSACTION = TEXT("executeTransaction");
 } // namespace PortalIdentityAction

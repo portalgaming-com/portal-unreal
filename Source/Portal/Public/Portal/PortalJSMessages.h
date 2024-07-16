@@ -14,6 +14,12 @@ enum class EPortalIdentityError : int8
 	WalletConnectionError,
 	UserRegistrationError,
 	RefreshTokenError,
+	TransferError,
+	CreateOrderError,
+	CancelOrderError,
+	CreateTradeError,
+	BatchTransferError,
+	ExchangeTransferError,
 	OperationNotSupportedError
 	// unknown, timeout?
 };

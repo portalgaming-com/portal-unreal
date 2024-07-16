@@ -50,8 +50,9 @@ Check out the PortalIdentity.h file for the C++ Identity API. In order to know t
 
 ## How to Add Game Bridge Asset to Packaged Resources
 
-1. Open Unreal Editor in the lowest supported version (i.e. 5.0) for this Plugin.
+1. Open Unreal Editor in the lowest supported version (i.e. 4.26) for this Plugin.
 2. Open Content Drawer
 3. Navigate to Plugins -> Portal Content -> Packages Resources
 4. Delete the existing imported `index.uasset`
 5. Right click and import the `index.js` file
+   ![Import Asset](ImportAsset.png)
