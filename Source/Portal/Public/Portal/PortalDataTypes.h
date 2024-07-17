@@ -76,21 +76,6 @@ struct FPortalIdentityInitDeviceFlowData
 };
 
 USTRUCT()
-struct FPortalUserProfile
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	FString email;
-
-	UPROPERTY()
-	FString nickname;
-
-	UPROPERTY()
-	FString sub;
-};
-
-USTRUCT()
 struct FPortalIdentityCodeConfirmRequestData
 {
 	GENERATED_BODY()
@@ -156,4 +141,86 @@ struct FNftTransferDetails
 
 	UPROPERTY(BlueprintReadWrite)
 	FString tokenAddress;
+};
+
+USTRUCT(BlueprintType, meta = (HasNativeBreak = "/Script/Portal.PortalBlueprintLibrary.BreakFZkEvmTransactionReceiptLog"))
+struct PORTAL_API FZkEvmTransactionReceiptLog
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FString address;
+
+	UPROPERTY()
+	TArray<FString> topics;
+
+	UPROPERTY()
+	FString data;
+
+	UPROPERTY()
+	FString blockNumber;
+
+	UPROPERTY()
+	FString transactionHash;
+
+	UPROPERTY()
+	FString transactionIndex;
+
+	UPROPERTY()
+	FString blockHash;
+
+	UPROPERTY()
+	FString logIndex;
+
+	UPROPERTY()
+	bool removed = false;
+};
+
+USTRUCT(BlueprintType, meta = (HasNativeBreak = "/Script/Portal.PortalBlueprintLibrary.BreakZkEvmTransactionReceipt"))
+struct PORTAL_API FZkEvmTransactionReceipt
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FString blockHash;
+
+	UPROPERTY()
+	FString blockNumber;
+
+	UPROPERTY()
+	FString contractAddress;
+
+	UPROPERTY()
+	FString cumulativeGasUsed;
+
+	UPROPERTY()
+	FString effectiveGasPrice;
+
+	UPROPERTY()
+	FString from;
+
+	UPROPERTY()
+	FString gasUsed;
+
+	UPROPERTY(BlueprintReadOnly)
+	TArray<FZkEvmTransactionReceiptLog> logs;
+
+	UPROPERTY()
+	FString logsBloom;
+
+	// Either 1 (success) or 0 (failure) encoded as a hexadecimal.
+	UPROPERTY()
+	FString status;
+
+	UPROPERTY()
+	FString to;
+
+	UPROPERTY()
+	FString transactionHash;
+
+	UPROPERTY()
+	FString transactionIndex;
+
+	UPROPERTY()
+	FString type;
 };
