@@ -39,6 +39,8 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject", BlueprintInternalUseOnly = "true"), Category = "Portal")
 	static UPortalConnectionAsyncActions *AuthenticatePKCE(UObject *WorldContextObject);
 
+	virtual void Activate() override;
+
 private:
 	FPortalIdentityInitDeviceFlowData InitDeviceFlowData;
 

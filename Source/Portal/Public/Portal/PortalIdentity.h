@@ -61,6 +61,10 @@ public:
 #endif
 
 	void Initialize(const FPortalIdentityInitData &InitData, const FPortalIdentityResponseDelegate &ResponseDelegate);
+	void Authenticate(bool TryToRelogin, const FPortalIdentityResponseDelegate &ResponseDelegate);
+#if PLATFORM_ANDROID | PLATFORM_IOS | PLATFORM_MAC
+	void AuthenticatePKCE(const FPortalIdentityResponseDelegate &ResponseDelegate);
+#endif
 
 	void Logout(bool DoHardLogout, const FPortalIdentityResponseDelegate &ResponseDelegate);
 	void RequestWalletSessionKey(const FPortalIdentityResponseDelegate &ResponseDelegate);

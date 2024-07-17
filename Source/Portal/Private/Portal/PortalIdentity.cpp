@@ -3,7 +3,6 @@
 #include "Portal/PortalIdentity.h"
 
 #include "Portal/Misc/PortalLogging.h"
-#include "Portal/PortalResponses.h"
 #include "Portal/PortalJSConnector.h"
 #include "JsonObjectConverter.h"
 #include "Portal/PortalSaveGame.h"
@@ -43,6 +42,28 @@ void UPortalIdentity::Initialize(const FPortalIdentityInitData &Data, const FPor
 
 	CallJS(PortalIdentityAction::INIT, InitData.ToJsonString(), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnInitializeResponse), false);
 }
+
+void UPortalIdentity::Authenticate(bool TryToRelogin, const FPortalIdentityResponseDelegate &ResponseDelegate)
+{
+	SetStateFlags(IPS_CONNECTING);
+	if (TryToRelogin)
+	{
+		CallJS(PortalIdentityAction::REAUTHENTICATE, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::ReinstateConnection));
+	}
+	else
+	{
+		CallJS(PortalIdentityAction::INIT_DEVICE_FLOW, TEXT(""), ResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnInitDeviceFlowResponse));
+	}
+}
+
+#if PLATFORM_ANDROID | PLATFORM_IOS | PLATFORM_MAC
+void UPortalIdentity::AuthenticatePKCE(const FPortalIdentityResponseDelegate &ResponseDelegate)
+{
+	SetStateFlags(IPS_CONNECTING | IPS_PKCE);
+	PKCEResponseDelegate = ResponseDelegate;
+	CallJS(PortalIdentityAction::GET_PKCE_AUTH_URL, TEXT(""), PKCEResponseDelegate, FPortalJSResponseDelegate::CreateUObject(this, &UPortalIdentity::OnGetPKCEAuthUrlResponse));
+}
+#endif
 
 void UPortalIdentity::Logout(bool DoHardLogout, const FPortalIdentityResponseDelegate &ResponseDelegate)
 {
